@@ -24,6 +24,8 @@ Then reload plugins (`/reload-plugins`) and you should see `/gemini-review:revie
 
 ## Usage
 
+Review current git changes (default):
+
 ```
 /gemini-review:review
 /gemini-review:review --base main
@@ -31,24 +33,36 @@ Then reload plugins (`/reload-plugins`) and you should see `/gemini-review:revie
 /gemini-review:review --model gemini-2.5-pro focus on the new auth code
 ```
 
+Review the whole codebase against free-form instructions:
+
+```
+/gemini-review:review --scope codebase audit for SQL injection
+/gemini-review:review --scope codebase look for missing input validation in the API handlers
+/gemini-review:review --scope codebase --model gemini-2.5-pro review concurrency in the worker pool
+```
+
 | Flag | Default | Notes |
 |---|---|---|
-| `--base <ref>` | auto-detected (origin/HEAD → main → master → trunk) | Compare branch against this ref. |
-| `--scope auto\|working-tree\|branch` | `auto` | `auto` picks `working-tree` if dirty, otherwise `branch`. |
+| `--base <ref>` | auto-detected (origin/HEAD → main → master → trunk) | Compare branch against this ref. Ignored under `--scope codebase`. |
+| `--scope auto\|working-tree\|branch\|codebase` | `auto` | `auto` picks `working-tree` if dirty, otherwise `branch`. `codebase` skips git entirely and lets Gemini explore the repo. |
 | `--model <name>` | Gemini CLI default | Passed through to `gemini -m`. |
-| trailing text | — | Appended to the prompt as additional focus. |
+| trailing text | — | For diff scopes, additional focus. For `--scope codebase`, the primary review instruction (required). |
 
-The command is read-only: Gemini gets `--approval-mode plan` so it cannot
-write files. It returns findings in `[SEVERITY] file:line — title` form and a
-final `VERDICT:` line.
+The command is read-only: Gemini gets `--approval-mode plan` so it can read
+files and run searches but cannot write or execute. It returns findings in
+`[SEVERITY] file:line — title` form and a final `VERDICT:` line.
 
 ## How it works
 
 `commands/review.md` invokes `scripts/review.mjs`, which:
 
-1. Picks a target (working tree diff, or `merge-base..HEAD` against the base ref).
-2. Builds a prompt containing the diff + a senior-engineer review rubric.
-3. Pipes that prompt to `gemini -p ... --approval-mode plan` and streams the
+1. **Diff scopes (`auto`, `working-tree`, `branch`).** Picks a target
+   (working tree diff, or `merge-base..HEAD` against the base ref) and builds
+   a prompt containing the diff + a senior-engineer review rubric.
+2. **Codebase scope (`codebase`).** Skips git, builds a prompt that asks
+   Gemini to explore the repo using its read-only file/search tools to
+   address the user's instructions.
+3. Pipes the prompt to `gemini -p ... --approval-mode plan` and streams the
    response back through Claude Code.
 
 ## Inspiration

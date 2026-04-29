@@ -16,9 +16,9 @@ const { values, positionals } = parseArgs({
 const cwd = process.cwd();
 const focusText = positionals.join(" ").trim();
 
-const validScopes = new Set(["auto", "working-tree", "branch"]);
+const validScopes = new Set(["auto", "working-tree", "branch", "codebase"]);
 if (!validScopes.has(values.scope)) {
-  fail(`--scope must be one of: auto, working-tree, branch (got "${values.scope}")`);
+  fail(`--scope must be one of: auto, working-tree, branch, codebase (got "${values.scope}")`);
 }
 
 function fail(msg, code = 1) {
@@ -37,7 +37,7 @@ function gitChecked(args) {
   return r.stdout;
 }
 
-if (git(["rev-parse", "--show-toplevel"]).status !== 0) {
+if (values.scope !== "codebase" && git(["rev-parse", "--show-toplevel"]).status !== 0) {
   fail("Not inside a git repository.");
 }
 
@@ -99,22 +99,45 @@ function buildBranchBlock(baseRef) {
   ].join("\n");
 }
 
-let block;
-if (values.scope === "working-tree" || (values.scope === "auto" && !values.base && isDirty())) {
-  block = buildWorkingTreeBlock();
-  if (!block) fail("Working tree is clean — nothing to review.", 0);
+let prompt;
+if (values.scope === "codebase") {
+  if (!focusText) {
+    fail('--scope codebase requires instructions, e.g. "review for security vulnerabilities".');
+  }
+  prompt = `You are a senior engineer reviewing the codebase rooted at the current working directory (${cwd}).
+
+Use your read-only tools (read_file, list_directory, glob, grep, etc.) to explore the codebase as needed to address the request below. Start by orienting yourself with the project layout (top-level files, package manifests, entrypoints), then dig into the relevant code paths.
+
+Be specific. Prioritize correctness, security, and concurrency issues over style. Cite file:line for every finding. Skip nits unless they materially affect readability.
+
+For each finding use this format:
+  [SEVERITY] file:line — short title
+  Why it's a problem.
+  Suggested fix.
+
+Severities: critical, high, medium, low.
+End with one line: "VERDICT: LGTM" or "VERDICT: NEEDS CHANGES — <one-line summary>".
+
+## review request from the user
+${focusText}
+`;
 } else {
-  const baseRef = values.base || detectDefaultBranch();
-  if (!baseRef) fail("Could not detect default branch. Pass --base <ref>.");
-  block = buildBranchBlock(baseRef);
-  if (!block) fail(`No commits between HEAD and ${baseRef} — nothing to review.`, 0);
-}
+  let block;
+  if (values.scope === "working-tree" || (values.scope === "auto" && !values.base && isDirty())) {
+    block = buildWorkingTreeBlock();
+    if (!block) fail("Working tree is clean — nothing to review.", 0);
+  } else {
+    const baseRef = values.base || detectDefaultBranch();
+    if (!baseRef) fail("Could not detect default branch. Pass --base <ref>.");
+    block = buildBranchBlock(baseRef);
+    if (!block) fail(`No commits between HEAD and ${baseRef} — nothing to review.`, 0);
+  }
 
-const focusBlock = focusText
-  ? `\n\n## additional focus from the user\n${focusText}\n`
-  : "";
+  const focusBlock = focusText
+    ? `\n\n## additional focus from the user\n${focusText}\n`
+    : "";
 
-const prompt = `You are a senior engineer giving a second-opinion code review on the changes below.
+  prompt = `You are a senior engineer giving a second-opinion code review on the changes below.
 
 Be specific. Prioritize correctness, security, and concurrency issues over style.
 Cite file:line for every finding. Skip nits unless they materially affect readability.
@@ -129,6 +152,7 @@ End with one line: "VERDICT: LGTM" or "VERDICT: NEEDS CHANGES — <one-line summ
 
 ${block}
 `;
+}
 
 const geminiArgs = ["-p", "Provide your code review now.", "--approval-mode", "plan"];
 if (values.model) geminiArgs.push("-m", values.model);
