@@ -1,0 +1,5 @@
+.DS_Store
+node_modules/
+
+# reference plugin used while researching, not part of this project
+example - gemini-plugin-cc-main/

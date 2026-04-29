@@ -1,0 +1,21 @@
+{
+  "name": "joshua-nugent-gemini-review",
+  "owner": {
+    "name": "joshua-nugent"
+  },
+  "metadata": {
+    "description": "Marketplace for the gemini-review plugin.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "gemini-review",
+      "description": "Get a second-opinion code review from Gemini CLI without leaving Claude Code.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Joshua Nugent"
+      },
+      "source": "./plugins/gemini-review"
+    }
+  ]
+}

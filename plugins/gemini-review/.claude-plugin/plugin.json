@@ -1,0 +1,5 @@
+{
+  "name": "gemini-review",
+  "version": "0.1.0",
+  "description": "Get a second-opinion code review from Gemini CLI without leaving Claude Code."
+}
