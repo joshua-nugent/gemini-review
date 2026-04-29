@@ -154,7 +154,11 @@ ${block}
 `;
 }
 
-const geminiArgs = ["-p", "Provide your code review now.", "--approval-mode", "plan"];
+const geminiArgs = [
+  "-p", "Provide your code review now.",
+  "--approval-mode", "plan",
+  "--skip-trust",
+];
 if (values.model) geminiArgs.push("-m", values.model);
 
 const child = spawn("gemini", geminiArgs, {
