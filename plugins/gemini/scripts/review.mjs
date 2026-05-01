@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import process from "node:process";
+import { runGemini } from "./_run.mjs";
 
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
@@ -161,21 +162,4 @@ const geminiArgs = [
 ];
 if (values.model) geminiArgs.push("-m", values.model);
 
-const child = spawn("gemini", geminiArgs, {
-  cwd,
-  env: process.env,
-  stdio: ["pipe", "inherit", "inherit"],
-});
-
-child.on("error", (err) => {
-  if (err.code === "ENOENT") fail("gemini CLI not found on PATH. Install from https://github.com/google-gemini/gemini-cli");
-  fail(`failed to launch gemini CLI: ${err.message}`);
-});
-
-child.stdin.on("error", () => {});
-child.stdin.end(prompt);
-
-child.on("exit", (code, signal) => {
-  if (signal) process.exit(1);
-  process.exit(code ?? 0);
-});
+runGemini({ args: geminiArgs, stdinInput: prompt, errorLabel: "gemini-review" });
