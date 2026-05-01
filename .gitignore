@@ -2,5 +2,6 @@
 node_modules/
 .claude/
 
-# reference plugin used while researching, not part of this project
+# reference plugins used while researching, not part of this project
 example - gemini-plugin-cc-main/
+other_plugin_examples/
