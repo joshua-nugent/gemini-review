@@ -64,15 +64,22 @@ function formatTokenFooter(models) {
   let input = 0;
   let output = 0;
   let total = 0;
+  let reasoning = 0;
+  let tool = 0;
   let modelName = null;
   for (const [name, m] of Object.entries(models)) {
     const t = m?.tokens || {};
     input += Number(t.input || t.prompt || 0);
     output += Number(t.candidates || 0);
     total += Number(t.total || 0);
+    reasoning += Number(t.thoughts || 0);
+    tool += Number(t.tool || 0);
     if (!modelName) modelName = name;
   }
   if (total === 0 && input === 0 && output === 0) return null;
   const fmt = (n) => n.toLocaleString("en-US");
-  return `\n— ${fmt(total)} tokens · ${fmt(input)} in / ${fmt(output)} out${modelName ? ` · ${modelName}` : ""}`;
+  const parts = [`${fmt(input)} in`, `${fmt(output)} out`];
+  if (reasoning > 0) parts.push(`${fmt(reasoning)} reasoning`);
+  if (tool > 0) parts.push(`${fmt(tool)} tool`);
+  return `\n— ${fmt(total)} tokens · ${parts.join(" / ")}${modelName ? ` · ${modelName}` : ""}`;
 }
