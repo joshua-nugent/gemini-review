@@ -14,7 +14,7 @@ const { values, positionals } = parseArgs({
 const prompt = positionals.join(" ").trim();
 if (!prompt) {
   process.stderr.write(
-    "gemini-ask: usage: /gemini-review:ask [--model <name>] <your question>\n"
+    "gemini-ask: usage: /gemini:ask [--model <name>] <your question>\n"
   );
   process.exit(1);
 }

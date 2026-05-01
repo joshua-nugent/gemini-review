@@ -4,18 +4,18 @@
     "name": "joshua-nugent"
   },
   "metadata": {
-    "description": "Marketplace for the gemini-review plugin.",
-    "version": "0.3.0"
+    "description": "Marketplace for the gemini plugin (second-opinion Gemini CLI commands).",
+    "version": "0.4.0"
   },
   "plugins": [
     {
-      "name": "gemini-review",
-      "description": "Get a second-opinion code review from Gemini CLI without leaving Claude Code.",
-      "version": "0.3.0",
+      "name": "gemini",
+      "description": "Slash commands for getting a second opinion from Gemini CLI: /gemini:review and /gemini:ask.",
+      "version": "0.4.0",
       "author": {
         "name": "Joshua Nugent"
       },
-      "source": "./plugins/gemini-review"
+      "source": "./plugins/gemini"
     }
   ]
 }
