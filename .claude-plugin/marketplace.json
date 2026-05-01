@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Marketplace for the gemini plugin (second-opinion Gemini CLI commands).",
-    "version": "0.4.2"
+    "version": "0.5.0"
   },
   "plugins": [
     {
       "name": "gemini",
       "description": "Slash commands for getting a second opinion from Gemini CLI: /gemini:review and /gemini:ask.",
-      "version": "0.4.2",
+      "version": "0.5.0",
       "author": {
         "name": "Joshua Nugent"
       },
