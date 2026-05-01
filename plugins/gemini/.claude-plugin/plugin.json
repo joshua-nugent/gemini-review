@@ -1,5 +1,5 @@
 {
   "name": "gemini",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Slash commands for getting a second opinion from Gemini CLI: /gemini:review and /gemini:ask."
 }
