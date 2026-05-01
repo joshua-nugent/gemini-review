@@ -1,16 +1,21 @@
 #!/usr/bin/env node
 // PreToolUse hook for the gemini-consultant subagent.
-// Prints a banner that the user can see in their transcript whenever
-// Claude auto-invokes the consultant — independent of whether Claude
-// itself decides to announce the consultation.
 //
-// Mechanism: write banner to stderr and exit with code 1. Per Claude
-// Code's hook contract, exit codes other than 0/2 are treated as a
-// "non-blocking error" — the tool call still proceeds, but stderr is
-// surfaced in the user's transcript. We also emit additionalContext
-// on stdout so Claude itself sees the banner in its context.
+// Three notification channels, none of which fight with Claude Code's TUI:
+//   1. Audit log:    appends to ~/.claude/gemini-consult.log so the user can
+//                    `tail -f` for live monitoring or audit history later.
+//   2. macOS notif:  pops a Notification Center banner via osascript.
+//   3. additionalContext: injects the banner into Claude's prompt context so
+//                    Claude itself is aware of the consultation.
+//
+// Always exits 0 — the hook never blocks the tool call.
 import process from "node:process";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
+
+const LOG_PATH = path.join(os.homedir(), ".claude", "gemini-consult.log");
 
 let raw = "";
 process.stdin.on("data", (c) => {
@@ -24,26 +29,39 @@ process.stdin.on("end", () => {
     process.exit(0);
   }
 
-  // Only fire for the gemini-consultant subagent.
   const subagent = event?.tool_input?.subagent_type || "";
   if (!subagent.endsWith("gemini-consultant")) process.exit(0);
 
-  const description = event?.tool_input?.description || "";
-  const bar = "━".repeat(64);
-  const banner = `${bar}\n🤝 CLAUDE IS CONSULTING GEMINI${description ? ` — ${description}` : ""}\n${bar}`;
+  const description = event?.tool_input?.description || "(no description)";
+  const ts = new Date().toISOString();
+  const banner = `🤝 CLAUDE IS CONSULTING GEMINI — ${description}`;
 
-  // Channel 1: /dev/tty — direct write to the controlling terminal,
-  // bypassing whatever stdio handling Claude Code does for hook output.
+  // Channel 1: audit log
   try {
-    fs.writeFileSync("/dev/tty", "\n" + banner + "\n\n");
+    fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
+    fs.appendFileSync(LOG_PATH, `${ts} ${description}\n`);
   } catch {
-    // No TTY available (e.g. CI / wrapped session) — fall through.
+    // ignore log failures
   }
 
-  // Channel 2: stderr (debugging — may or may not surface).
-  process.stderr.write(banner + "\n");
+  // Channel 2: macOS notification
+  if (process.platform === "darwin") {
+    try {
+      const safe = description.replace(/["\\]/g, "");
+      execFileSync(
+        "osascript",
+        [
+          "-e",
+          `display notification "${safe}" with title "🤝 Claude is consulting Gemini"`,
+        ],
+        { timeout: 2000, stdio: "ignore" }
+      );
+    } catch {
+      // osascript may be missing or sandboxed — fail silently
+    }
+  }
 
-  // Channel 3: additionalContext for Claude's awareness (always works).
+  // Channel 3: additionalContext for Claude
   process.stdout.write(
     JSON.stringify({
       hookSpecificOutput: {
