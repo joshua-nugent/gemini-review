@@ -2,6 +2,7 @@
 description: Get a second-opinion code review from Gemini CLI
 argument-hint: '[--base <ref>] [--scope auto|working-tree|branch|codebase] [--model <name>] [focus text or codebase instructions]'
 allowed-tools: Bash(node:*)
+disable-model-invocation: true
 ---
 
 Run a Gemini code review.

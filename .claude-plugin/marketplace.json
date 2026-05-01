@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Marketplace for the gemini-review plugin.",
-    "version": "0.2.1"
+    "version": "0.2.2"
   },
   "plugins": [
     {
       "name": "gemini-review",
       "description": "Get a second-opinion code review from Gemini CLI without leaving Claude Code.",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": {
         "name": "Joshua Nugent"
       },
