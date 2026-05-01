@@ -10,6 +10,7 @@
 // surfaced in the user's transcript. We also emit additionalContext
 // on stdout so Claude itself sees the banner in its context.
 import process from "node:process";
+import fs from "node:fs";
 
 let raw = "";
 process.stdin.on("data", (c) => {
@@ -31,7 +32,18 @@ process.stdin.on("end", () => {
   const bar = "━".repeat(64);
   const banner = `${bar}\n🤝 CLAUDE IS CONSULTING GEMINI${description ? ` — ${description}` : ""}\n${bar}`;
 
+  // Channel 1: /dev/tty — direct write to the controlling terminal,
+  // bypassing whatever stdio handling Claude Code does for hook output.
+  try {
+    fs.writeFileSync("/dev/tty", "\n" + banner + "\n\n");
+  } catch {
+    // No TTY available (e.g. CI / wrapped session) — fall through.
+  }
+
+  // Channel 2: stderr (debugging — may or may not surface).
   process.stderr.write(banner + "\n");
+
+  // Channel 3: additionalContext for Claude's awareness (always works).
   process.stdout.write(
     JSON.stringify({
       hookSpecificOutput: {
@@ -40,5 +52,6 @@ process.stdin.on("end", () => {
       },
     })
   );
-  process.exit(1);
+
+  process.exit(0);
 });
